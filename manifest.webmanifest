@@ -1,0 +1,8 @@
+{
+  "name": "Advance fiber. Machine life monitor",
+  "short_name": "Machine Life",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#17324d"
+}
