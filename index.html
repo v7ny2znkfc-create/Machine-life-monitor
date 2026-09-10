@@ -1,4 +1,6 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#17324d"><link rel="manifest" href="manifest.webmanifest"><title>Advance fiber. Machine life monitor</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#17324d"><link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><title>Advance fiber. Machine life monitor</title><style>
 *{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#172b3a;font-family:Arial,sans-serif}header{background:#17324d;color:#fff;padding:22px 18px}header h1{margin:0;font-size:24px}header div{opacity:.82;font-size:13px;margin-top:4px}main{max-width:1100px;margin:auto;padding:16px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.card,.metric{background:#fff;border:1px solid #dfe7ef;border-radius:16px;padding:16px}.metric span,.muted{color:#718096;font-size:12px}.metric strong{display:block;font-size:30px;margin-top:4px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}button{border:0;border-radius:11px;padding:10px 13px;font-weight:700;cursor:pointer}.primary{background:#17324d;color:#fff}.secondary{background:#eaf0f6;color:#17324d}input,select{width:100%;padding:10px;border:1px solid #ccd6e0;border-radius:10px}.item{width:100%;display:flex;justify-content:space-between;gap:12px;align-items:center;text-align:left;background:#fff;border:1px solid #dfe7ef;border-radius:13px;padding:13px 14px;margin:7px 0}.hidden{display:none!important}.kv{background:#f8fafc;border-radius:10px;padding:10px}.kv span{display:block;color:#718096;font-size:11px}.kv strong{display:block;margin-top:4px}
 
 .metric-btn{cursor:pointer;text-align:left;border:1px solid #dfe7ef;transition:.15s transform,.15s box-shadow}
@@ -11,7 +13,7 @@
 @media(max-width:520px){.dashboard-grid{grid-template-columns:1fr 1fr}.metric strong{font-size:24px}}
 
 </style></head><body>
-<header><h1>Advance fiber. Machine life monitor</h1><div>Engineering & Management Monitoring • V1.1</div></header>
+<header><h1>Advance fiber. Machine life monitor</h1><div>Engineering & Management Monitoring • V1.2</div></header>
 
 <main>
   <section id="homeView">
@@ -256,7 +258,7 @@ function editMachine(r){editRow=+r;let x=data().find(v=>+v.row===+r);$('form').i
 function saveForm(){let d=data(),x=editRow==null?null:d.find(v=>+v.row===editRow),name=$('n').value.trim(),life=+$('life').value,last=$('last').value;if(!name||!life||!last)return alert('กรอก Name, Life Time, Last Change');if(!x){x={row:Math.max(...d.map(v=>+v.row||0))+1,history:[]};d.push(x)}Object.assign(x,{name,life,lastChange:last,masterCode:$('mc').value.trim(),partCode:$('pc').value.trim()});save(d,'Admin Edit');$('form').classList.add('hidden');detail(x.row)}
 function replacement(r){let date=prompt('Replacement date',today());if(!date)return;let note=prompt('Remark','Change new part')||'Change';let d=data(),x=d.find(v=>+v.row===+r);x.history=x.history||[];x.history.push({date,event:note});x.lastChange=date;save(d,'Replacement Record');detail(r)}
 function download(o,n){let b=new Blob([JSON.stringify(o,null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
-function pack(){return {schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.1',exportedAt:now(),source:'Published Master Export',meta:meta(),machines:data()}}
+function pack(){return {schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.2',exportedAt:now(),source:'Published Master Export',meta:meta(),machines:data()}}
 function exportMaster(){if(admin)download(pack(),'machine-data.json')}
 async function syncNow(manual=false){try{let r=await fetch(REMOTE+'?t='+Date.now(),{cache:'no-store'}),p=await r.json();if(p.schema!==SCHEMA||!Array.isArray(p.machines))throw 0;let local=meta(),remote=p.meta||{version:'v1.0'};if(manual||remote.version!==local.version){localStorage.setItem(KEY,JSON.stringify(p.machines.map(calc)));localStorage.setItem(META,JSON.stringify({...remote,source:'Published Master',updatedAt:p.exportedAt||remote.updatedAt||now()}))}render()}catch(e){render()}}
 render();setTimeout(()=>syncNow(false),900);
