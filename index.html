@@ -6,6 +6,15 @@
 .metric-btn{cursor:pointer;text-align:left;border:1px solid #dfe7ef;transition:.15s transform,.15s box-shadow}
 .metric-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(23,50,77,.08)}
 .metric-btn small{display:block;margin-top:8px;color:#718096;font-size:11px}
+.metric-total{background:#eef5ff;border-color:#bfd5f5;color:#17324d}
+.metric-overdue{background:#fff0f0;border-color:#f4aaaa;color:#a61b1b}
+.metric-due{background:#fff5e8;border-color:#f2bd78;color:#a65300}
+.metric-normal{background:#edf9f1;border-color:#9ed8ae;color:#176b36}
+.metric-total span,.metric-total small{color:#4d6b8a}
+.metric-overdue span,.metric-overdue small{color:#a61b1b}
+.metric-due span,.metric-due small{color:#a65300}
+.metric-normal span,.metric-normal small{color:#176b36}
+.metric-overdue,.metric-due,.metric-normal{box-shadow:0 3px 10px rgba(23,50,77,.05)}
 .dashboard-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 .machine-row-main{display:flex;flex-direction:column;gap:4px;min-width:0}
 .machine-row-sub{font-size:11px;color:#718096}
@@ -13,7 +22,7 @@
 @media(max-width:520px){.dashboard-grid{grid-template-columns:1fr 1fr}.metric strong{font-size:24px}}
 
 </style></head><body>
-<header><h1>Advance fiber. Machine life monitor</h1><div>Engineering & Management Monitoring • V1.2</div></header>
+<header><h1>Advance fiber. Machine life monitor</h1><div>Engineering & Management Monitoring • V1.3</div></header>
 
 <main>
   <section id="homeView">
@@ -28,16 +37,16 @@
     <div style="height:16px"></div>
 
     <div class="grid dashboard-grid">
-      <button class="metric metric-btn" onclick="openList('all')">
+      <button class="metric metric-btn metric-total" onclick="openList('all')">
         <span>Total Equipment</span><strong id="total">0</strong><small>View all machines</small>
       </button>
-      <button class="metric metric-btn" onclick="openList('overdue')">
+      <button class="metric metric-btn metric-overdue" onclick="openList('overdue')">
         <span>Overdue</span><strong id="overdue">0</strong><small>Needs attention</small>
       </button>
-      <button class="metric metric-btn" onclick="openList('due30')">
+      <button class="metric metric-btn metric-due" onclick="openList('due30')">
         <span>Due Soon</span><strong id="due">0</strong><small>Upcoming due</small>
       </button>
-      <button class="metric metric-btn" onclick="openList('normal')">
+      <button class="metric metric-btn metric-normal" onclick="openList('normal')">
         <span>Normal</span><strong id="normal">0</strong><small>Within life period</small>
       </button>
     </div>
