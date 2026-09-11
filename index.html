@@ -22,7 +22,7 @@
 @media(max-width:520px){.dashboard-grid{grid-template-columns:1fr 1fr}.metric strong{font-size:24px}}
 
 </style></head><body>
-<header><h1>Advance fiber. Machine life monitor</h1><div>Engineering & Management Monitoring • V1.4</div></header>
+<header><h1>Advance fiber. Machine life monitor</h1><div>Engineering & Management Monitoring • V1.4.1</div></header>
 
 <main>
   <section id="homeView">
@@ -133,7 +133,7 @@ function nextV(v){let m=String(v||'v1.0').match(/(\d+)\.(\d+)/),a=+(m?.[1]||1),b
 async function save(d,source){
   d=d.map(calc);let m=meta();m.version=nextV(m.version);m.updatedAt=now();m.source=DB_ON?'Supabase • '+source:source;
   localStorage.setItem(KEY,JSON.stringify(d));localStorage.setItem(META,JSON.stringify(m));
-  if(DB_ON){try{await dbSave({schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.4',exportedAt:now(),meta:m,machines:d})}catch(e){alert('บันทึกในเครื่องแล้ว แต่บันทึก Database ไม่สำเร็จ: '+e.message)}}
+  if(DB_ON){try{await dbSave({schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.4.1',exportedAt:now(),meta:m,machines:d})}catch(e){alert('บันทึกในเครื่องแล้ว แต่บันทึก Database ไม่สำเร็จ: '+e.message)}}
   render();
 }
 function st(s){return s==='overdue'?'🔴 Overdue':s==='due30'?'🟠 Due Soon':'🟢 Normal'}
@@ -285,13 +285,13 @@ function editMachine(r){editRow=+r;let x=data().find(v=>+v.row===+r);$('form').i
 async function saveForm(){let d=data(),x=editRow==null?null:d.find(v=>+v.row===editRow),name=$('n').value.trim(),life=+$('life').value,last=$('last').value;if(!name||!life||!last)return alert('กรอก Name, Life Time, Last Change');if(!x){x={row:Math.max(...d.map(v=>+v.row||0))+1,history:[]};d.push(x)}Object.assign(x,{name,life,lastChange:last,masterCode:$('mc').value.trim(),partCode:$('pc').value.trim()});await save(d,'Admin Edit');$('form').classList.add('hidden');detail(x.row)}
 async function replacement(r){let date=prompt('Replacement date',today());if(!date)return;let note=prompt('Remark','Change new part')||'Change';let d=data(),x=d.find(v=>+v.row===+r);x.history=x.history||[];x.history.push({date,event:note});x.lastChange=date;await save(d,'Replacement Record');detail(r)}
 function download(o,n){let b=new Blob([JSON.stringify(o,null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
-function pack(){return {schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.4',exportedAt:now(),source:'Published Master Export',meta:meta(),machines:data()}}
+function pack(){return {schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.4.1',exportedAt:now(),source:'Published Master Export',meta:meta(),machines:data()}}
 function exportMaster(){if(admin)download(pack(),'machine-data.json')}
 function openRetired(){openList('retired')}
 async function retireMachine(r){if(!admin)return;let d=data(),x=d.find(v=>+v.row===+r);if(!x)return;if(!confirm('Retire '+x.name+'?\n\nเครื่องจะถูกซ่อนจาก Dashboard แต่ประวัติยังคงอยู่'))return;x.inactive=true;x.retiredAt=now();await save(d,'Machine Retired');detail(r)}
 async function restoreMachine(r){if(!admin)return;let d=data(),x=d.find(v=>+v.row===+r);if(!x)return;x.inactive=false;delete x.retiredAt;await save(d,'Machine Restored');detail(r)}
 async function deleteMachine(r){if(!admin)return;let d=data(),x=d.find(v=>+v.row===+r);if(!x||!x.inactive)return alert('Retire machine before permanent delete.');if(!confirm('DELETE PERMANENTLY: '+x.name+'?\n\nประวัติทั้งหมดของเครื่องนี้จะถูกลบและไม่สามารถ Undo ได้'))return;d=d.filter(v=>+v.row!==+r);await save(d,'Machine Deleted');openRetired()}
-function dbHeaders(write=false){const h={'apikey':DBCFG.supabaseAnonKey,'Content-Type':'application/json'};if(write)h.Authorization='Bearer '+dbToken;else h.Authorization='Bearer '+DBCFG.supabaseAnonKey;return h}
+function dbHeaders(write=false){const h={'apikey':DBCFG.supabaseAnonKey,'Content-Type':'application/json'};if(write)h.Authorization='Bearer '+dbToken;return h}
 async function dbFetch(){const r=await fetch(DBCFG.supabaseUrl+'/rest/v1/machine_life_state?id=eq.1&select=payload',{headers:dbHeaders(false),cache:'no-store'});if(!r.ok)throw new Error('Database read '+r.status);const j=await r.json();if(!j[0]?.payload)throw new Error('Database is empty');return j[0].payload}
 async function dbSave(payload){if(!dbToken)throw new Error('Admin must login before database write');const r=await fetch(DBCFG.supabaseUrl+'/rest/v1/machine_life_state?id=eq.1',{method:'PATCH',headers:{...dbHeaders(true),'Prefer':'return=minimal'},body:JSON.stringify({payload,updated_at:now()})});if(!r.ok){let t=await r.text();throw new Error('Database write '+r.status+' '+t)}}
 async function syncNow(manual=false){
