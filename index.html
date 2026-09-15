@@ -18,11 +18,13 @@
 .dashboard-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 .machine-row-main{display:flex;flex-direction:column;gap:4px;min-width:0}
 .machine-row-sub{font-size:11px;color:#718096}
+.status-side{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.day-value{font-size:12px;font-weight:700;color:#52677b;white-space:nowrap}
 @media(max-width:780px){.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.dashboard-grid{grid-template-columns:1fr 1fr}.metric strong{font-size:24px}}
 
 </style></head><body>
-<header><h1>Advance fiber. Machine life monitor</h1><div>Engineering & Management Monitoring • V1.5.1</div></header>
+<header><h1>Advance fiber. Machine life monitor</h1><div>Engineering & Management Monitoring • V1.6</div></header>
 
 <main>
   <section id="homeView">
@@ -104,6 +106,12 @@
             <option value="retired">Retired</option>
           </select>
         </div>
+        <div>
+          <label>PU / Location</label>
+          <select id="puFilter" onchange="renderList()">
+            <option value="all">All PU / Location</option>
+          </select>
+        </div>
       </div>
 
       <div id="list" style="margin-top:10px"></div>
@@ -135,7 +143,7 @@ function nextV(v){let m=String(v||'v1.0').match(/(\d+)\.(\d+)/),a=+(m?.[1]||1),b
 async function save(d,source){
   d=d.map(calc);let m=meta();m.version=nextV(m.version);m.updatedAt=now();m.source=DB_ON?'Supabase • '+source:source;
   localStorage.setItem(KEY,JSON.stringify(d));localStorage.setItem(META,JSON.stringify(m));
-  if(DB_ON){try{await dbSave({schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.5.1',exportedAt:now(),meta:m,machines:d})}catch(e){alert('บันทึกในเครื่องแล้ว แต่บันทึก Database ไม่สำเร็จ: '+e.message)}}
+  if(DB_ON){try{await dbSave({schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.6',exportedAt:now(),meta:m,machines:d})}catch(e){alert('บันทึกในเครื่องแล้ว แต่บันทึก Database ไม่สำเร็จ: '+e.message)}}
   render();
 }
 function st(s){return s==='overdue'?'🔴 Overdue':s==='due30'?'🟠 Due Soon':'🟢 Normal'}
@@ -168,6 +176,8 @@ function remainLabel(x){
   return x.remain<0?Math.abs(x.remain)+' days overdue':x.remain+' days remain';
 }
 function usedDays(x){return x.lastChange?Math.max(0,days(x.lastChange,today())):null}
+function listDayLabel(x){if(x.status==='overdue')return Math.abs(x.remain||0)+' days overdue';const used=usedDays(x);return used==null?'No usage date':used+' days used'}
+function updatePUFilter(source){const el=$('puFilter'),current=el.value||'all',values=[...new Set(source.map(x=>x.pu).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));el.innerHTML='<option value="all">All PU / Location</option><option value="none">No PU / Location</option>'+values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');el.value=(current==='all'||current==='none'||values.includes(current))?current:'all';return el.value}
 function listTitleFor(status){
   if(status==='overdue')return ['Overdue','Machines already past due date'];
   if(status==='due30')return ['Due Soon','Machines due within the current alert window'];
@@ -178,6 +188,7 @@ function listTitleFor(status){
 function openList(status='all'){
   currentListStatus=status;
   $('filter').value=status;
+  $('puFilter').value='all';
   $('q').value='';
   $('homeView').classList.add('hidden');
   $('detailView').classList.add('hidden');
@@ -196,7 +207,8 @@ function renderList(){
 
   const ord={overdue:0,due30:1,normal:2};
   const d=f==='retired'?all.filter(x=>x.inactive):all.filter(x=>!x.inactive);
-  const rows=d.filter(x=>(!q||[x.name,x.pu,x.masterCode,x.partCode,x.area,x.job].join(' ').toLowerCase().includes(q))&&(f==='all'||f==='retired'||x.status===f))
+  const pu=updatePUFilter(d);
+  const rows=d.filter(x=>(!q||[x.name,x.pu,x.masterCode,x.partCode,x.area,x.job].join(' ').toLowerCase().includes(q))&&(f==='all'||f==='retired'||x.status===f)&&(pu==='all'||(pu==='none'?!x.pu:x.pu===pu)))
     .sort((x,y)=>ord[x.status]-ord[y.status] || (x.remain??9999)-(y.remain??9999) || String(x.name).localeCompare(String(y.name)));
 
   $('listCount').textContent=rows.length+' items';
@@ -206,7 +218,7 @@ function renderList(){
         <strong>${esc(x.name)}</strong>
         <span class="machine-row-sub">${x.pu?`<span class="location-badge">${esc(x.pu)}</span> · `:''}${esc(x.area||'')}${x.area?' · ':''}${remainLabel(x)}</span>
       </div>
-      <span>${x.inactive?'<span class=\"retired-badge\">Retired</span>':statusLabel(x.status)}</span>
+      <span class="status-side"><span class="day-value">${listDayLabel(x)}</span><span>${x.inactive?'<span class=\"retired-badge\">Retired</span>':statusLabel(x.status)}</span></span>
     </button>`).join(''):'<div class="muted">No machines found.</div>';
   updateHeaderMeta();
 }
@@ -310,7 +322,7 @@ function cancelForm(){if(editRow==null){$('form').classList.add('hidden');$('det
 async function saveForm(){let d=data(),x=editRow==null?null:d.find(v=>+v.row===editRow),name=$('n').value.trim(),life=+$('life').value,last=$('last').value;if(!name||!life||!last)return alert('กรอก Machine Name, Life Time และ Last Change');if(!x){x={row:Math.max(...d.map(v=>+v.row||0))+1,history:[]};d.push(x)}let avg=$('avg').value.trim(),price=$('price').value.trim();Object.assign(x,{name,pu:$('pu').value.trim(),area:$('area').value.trim(),life,lastChange:last,masterCode:$('mc').value.trim(),partCode:$('pc').value.trim(),avg:avg===''?null:+avg,spare:$('spare').value.trim(),price:price===''?null:+price,job:$('job').value.trim(),comment:$('comment').value.trim()});await save(d,'Admin Edit');$('form').classList.add('hidden');detail(x.row)}
 async function replacement(r){let date=prompt('Replacement date',today());if(!date)return;let note=prompt('Remark','Change new part')||'Change';let d=data(),x=d.find(v=>+v.row===+r);x.history=x.history||[];x.history.push({date,event:note});x.lastChange=date;await save(d,'Replacement Record');detail(r)}
 function download(o,n){let b=new Blob([JSON.stringify(o,null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
-function pack(){return {schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.5.1',exportedAt:now(),source:'Published Master Export',meta:meta(),machines:data()}}
+function pack(){return {schema:SCHEMA,appVersion:'Advance fiber. Machine life monitor V1.6',exportedAt:now(),source:'Published Master Export',meta:meta(),machines:data()}}
 function exportMaster(){if(admin)download(pack(),'machine-data.json')}
 function openRetired(){openList('retired')}
 async function retireMachine(r){if(!admin)return;let d=data(),x=d.find(v=>+v.row===+r);if(!x)return;if(!confirm('Retire '+x.name+'?\n\nเครื่องจะถูกซ่อนจาก Dashboard แต่ประวัติยังคงอยู่'))return;x.inactive=true;x.retiredAt=now();await save(d,'Machine Retired');detail(r)}
